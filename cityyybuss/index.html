@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityBus Tracker - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 950px;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .login-sidebar {
+            flex: 1;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .logo i {
+            font-size: 3rem;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .sidebar-content h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .login-form-section {
+            flex: 1.2;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-toggle {
+            display: flex;
+            background: #f3f4f6;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            padding: 4px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #6b7280;
+        }
+
+        .toggle-btn.active {
+            background: white;
+            color: #4f46e5;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container { display: none; }
+        .form-container.active { display: block; }
+
+        .form-title { font-size: 1.8rem; color: #1f2937; margin-bottom: 0.5rem; font-weight: 700; }
+        .form-subtitle { color: #6b7280; margin-bottom: 2rem; font-size: 0.95rem; }
+
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: #374151; font-weight: 500; }
+
+        .input-group { position: relative; display: flex; align-items: center; }
+
+        .input-icon {
+            position: absolute; left: 1rem; color: #9ca3af;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .login-container { 
+                flex-direction: column; 
+                max-width: 400px;
+                margin: 10px;
+            }
+            .login-sidebar { 
+                padding: 2rem 1rem;
+                min-height: auto;
+            }
+            .login-form-section { 
+                padding: 2rem 1.5rem;
+            }
+            .logo h1 {
+                font-size: 1.5rem;
+            }
+            .sidebar-content h2 {
+                font-size: 1.3rem;
+            }
+            .form-title {
+                font-size: 1.5rem;
+            }
+            .form-toggle {
+                flex-direction: row;
+                overflow-x: auto;
+            }
+            .toggle-btn {
+                font-size: 0.85rem;
+                padding: 0.6rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .login-container {
+                max-width: 100%;
+            }
+            .logo i {
+                font-size: 2rem;
+            }
+            .logo h1 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-sidebar">
+            <div class="logo">
+                <i class="fas fa-bus"></i>
+                <h1>CityBus</h1>
+            </div>
+            <div class="sidebar-content">
+                <h2>Welcome to Sambhajinagar</h2>
+                <p>Track your city buses, check driver details, and manage routes easily.</p>
+            </div>
+        </div>
+
+        <div class="login-form-section">
+            <div class="form-toggle">
+                <button class="toggle-btn active" onclick="switchForm('user')"><i class="fas fa-user"></i> User</button>
+                <button class="toggle-btn" onclick="switchForm('admin')"><i class="fas fa-user-shield"></i> Admin</button>
+                <button class="toggle-btn" onclick="switchForm('driver')"><i class="fas fa-id-badge"></i> Driver</button>
+            </div>
+
+            <!-- USER FORM -->
+            <div class="form-container active" id="userForm">
+                <h2 class="form-title">User Login</h2>
+                <p class="form-subtitle">Use your mobile to continue</p>
+                <div class="error-message" id="phoneError"></div>
+                <form onsubmit="sendOTP(event)">
+                    <div class="form-group">
+                        <label for="mobile">Mobile Number</label>
+                        <div class="input-group">
+                            <i class="fas fa-mobile-alt input-icon"></i>
+                            <input type="tel" id="mobile" class="form-input" placeholder="Enter 10-digit mobile" maxlength="10" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send OTP</button>
+                </form>
+            </div>
+
+            <!-- ADMIN FORM -->
+            <div class="form-container" id="adminForm">
+                <h2 class="form-title">Admin Login</h2>
+                <div class="error-message" id="adminError"></div>
+                <form onsubmit="adminLogin(event)">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <div class="input-group">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" id="adminEmail" class="form-input" placeholder="admin@citybus.com" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <div class="input-group">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="adminPassword" class="form-input" placeholder="Enter your password" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
+                </form>
+            </div>
+
+            <!-- DRIVER FORM -->
+            <div class="form-container" id="driverForm">
+                <h2 class="form-title">Driver Login</h2>
+                <p class="form-subtitle">Select your bus and login</p>
+                <div class="error-message" id="driverError"></div>
+                <form onsubmit="driverLogin(event)">
+                    <div class="form-group">
+                        <label for="driverBusId">Bus ID</label>
+                        <div class="input-group">
+                            <i class="fas fa-bus input-icon"></i>
+                            <input type="text" id="driverBusId" class="form-input" placeholder="e.g. BUS-101" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="driverPassword">Password</label>
+                        <div class="input-group">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="driverPassword" class="form-input" placeholder="Enter password" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZUaLXmss_Heh6nKdeb385Mop-oiYhIHM",
+            authDomain: "bus-tracking-12915.firebaseapp.com",
+            databaseURL: "https://bus-tracking-12915-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "bus-tracking-12915",
+            storageBucket: "bus-tracking-12915.firebasestorage.app",
+            messagingSenderId: "269054792297",
+            appId: "1:269054792297:web:19ef7bedc3de2d1a5888f8"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function switchForm(formType) {
+            document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.form-container').forEach(form => form.classList.remove('active'));
+            document.getElementById(formType + 'Form').classList.add('active');
+        }
+
+        function sendOTP(e) {
+            e.preventDefault();
+            const mobile = document.getElementById('mobile').value;
+            if (!/^[0-9]{10}$/.test(mobile)) {
+                showError('phoneError', 'Enter valid 10-digit number');
+                return;
+            }
+            alert('✅ Login Successful!');
+            window.location.href = "realtimebus.html";
+        }
+
+        function adminLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            if (email === "admin@citybus.com" && password === "admin123") {
+                alert("✅ Welcome Admin!");
+                window.location.href = "admin.html";
+            } else {
+                showError("adminError", "Invalid admin credentials");
+            }
+        }
+
+        function driverLogin(e) {
+            e.preventDefault();
+            const busId = document.getElementById('driverBusId').value.trim();
+            const pass = document.getElementById('driverPassword').value.trim();
+
+            if (!busId) {
+                showError("driverError", "Please enter your Bus ID");
+                return;
+            }
+
+            if (pass === "driver123") {
+                localStorage.setItem('driverBusId', busId);
+                alert("✅ Welcome Driver!");
+                window.location.href = "driver.html";
+            } else {
+                showError("driverError", "Invalid Password");
+            }
+        }
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.style.display = "block";
+            setTimeout(() => el.style.display = "none", 4000);
+        }
+    </script>
+</body>
+</html>

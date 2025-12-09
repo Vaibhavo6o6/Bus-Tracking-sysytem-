@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>City Bus Live Tracking</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      position: relative;
+    }
+
+    nav a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -5px;
+      width: 0%;
+      height: 2px;
+      background: #fff;
+      transition: width 0.3s;
+    }
+
+    nav a:hover::after {
+      width: 100%;
+    }
+
+    .logout-btn {
+      background: #ff4d4f;
+      color: white;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+
+    .logout-btn:hover {
+      background: #e03131;
+    }
+
+    main {
+      display: flex;
+      flex-direction: row;
+      gap: 1.5rem;
+      padding: 1.5rem;
+    }
+
+    #map {
+      width: 100%;
+      height: 80vh;
+      border-radius: 12px;
+    }
+
+    .map-section {
+      flex: 2;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 0.75rem;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
+      max-height: 80vh;
+    }
+
+    .section-card {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 1rem;
+    }
+
+    .section-card h2 {
+      text-align: center;
+      font-size: 1.3rem;
+      color: #ffe;
+      margin-bottom: 1rem;
+    }
+
+    .bus-item, .stop-item {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border-left: 4px solid #4285F4;
+    }
+
+    .bus-item:hover, .stop-item:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .bus-item strong, .stop-item strong {
+      font-size: 1.1rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 2rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .nearest-badge {
+      display: inline-block;
+      background: #10b981;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+
+    .bus-expanded {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 2px solid rgba(255, 255, 255, 0.3);
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        max-height: 0;
+      }
+      to {
+        opacity: 1;
+        max-height: 200px;
+      }
+    }
+
+    .detail-line {
+      margin: 0.4rem 0;
+      font-size: 0.9rem;
+    }
+
+    .eta-highlight {
+      background: rgba(16, 185, 129, 0.2);
+      padding: 0.5rem;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+      font-weight: bold;
+      color: #10b981;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      color: #fff;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 768px) {
+      main {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1><i class="fas fa-bus"></i> City Bus Live Tracking</h1>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">Routes</a>
+      <a href="index.html" class="logout-btn">Logout</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="map-section">
+      <div id="map"></div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="section-card">
+        <h2><i class="fas fa-bus"></i> Active Buses</h2>
+        <div id="bus-list">
+          <p class="no-data">Loading buses...</p>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2><i class="fas fa-map-marker-alt"></i> Bus Stops</h2>
+        <div id="stop-list">
+          <p class="no-data">Loading stops...</p>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>© 2025 CityBus Tracker | Designed by Vaibhav Dattu Mote</footer>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAZUaLXmss_Heh6nKdeb385Mop-oiYhIHM",
+      authDomain: "bus-tracking-12915.firebaseapp.com",
+      databaseURL: "https://bus-tracking-12915-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "bus-tracking-12915",
+      storageBucket: "bus-tracking-12915.firebasestorage.app",
+      messagingSenderId: "269054792297",
+      appId: "1:269054792297:web:19ef7bedc3de2d1a5888f8"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    console.log("Firebase connected successfully");
+
+    let map;
+    let userMarker = null;
+    let busMarkers = {};
+    let stopMarkers = {};
+    let userPosition = null;
+    let directionsService = null;
+    let directionsRenderer = null;
+    let expandedBusId = null;
+
+    // Initialize Google Map
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 19.8762, lng: 75.3433 },
+        zoom: 13,
+        styles: [
+          {
+            featureType: "poi",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }]
+          }
+        ]
+      });
+
+      // Initialize Directions Service for route calculation
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true
+      });
+
+      trackUser();
+      loadAllBuses();
+      loadAllStops();
+    }
+
+    // Track user's live location
+    function trackUser() {
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            userPosition = { lat: latitude, lng: longitude };
+
+            if (!userMarker) {
+              userMarker = new google.maps.Marker({
+                position: userPosition,
+                map,
+                title: "You are here",
+                icon: {
+                  url: "https://cdn-icons-png.flaticon.com/512/1077/1077012.png",
+                  scaledSize: new google.maps.Size(40, 40),
+                },
+                zIndex: 1000
+              });
+
+              map.setCenter(userPosition);
+              map.setZoom(14);
+            } else {
+              userMarker.setPosition(userPosition);
+            }
+
+            updateNearestStop();
+          },
+          (err) => {
+            console.error("Location error:", err);
+            userPosition = { lat: 19.8762, lng: 75.3433 };
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      } else {
+        alert("Geolocation is not supported by your browser.");
+        userPosition = { lat: 19.8762, lng: 75.3433 };
+      }
+    }
+
+    // Load all active buses from Firebase
+    function loadAllBuses() {
+      const busesRef = db.ref("buses");
+
+      busesRef.on("value", (snapshot) => {
+        const buses = snapshot.val();
+        
+        if (!buses) {
+          document.getElementById("bus-list").innerHTML = 
+            '<p class="no-data">No active buses at the moment</p>';
+          return;
+        }
+
+        // Clear old markers
+        Object.keys(busMarkers).forEach(id => {
+          if (!buses[id]) {
+            busMarkers[id].setMap(null);
+            delete busMarkers[id];
+          }
+        });
+
+        // Add/update markers for each bus
+        const busList = document.getElementById("bus-list");
+        busList.innerHTML = "";
+
+        for (let id in buses) {
+          const bus = buses[id];
+          
+          if (!bus.latitude || !bus.longitude) continue;
+          
+          const pos = { lat: bus.latitude, lng: bus.longitude };
+
+          // Create or update marker
+          if (!busMarkers[id]) {
+            busMarkers[id] = new google.maps.Marker({
+              position: pos,
+              map,
+              title: `Bus ${bus.busNumber || id}`,
+              icon: {
+                url: "https://cdn-icons-png.flaticon.com/512/61/61205.png",
+                scaledSize: new google.maps.Size(45, 45),
+              },
+              animation: google.maps.Animation.DROP
+            });
+
+            busMarkers[id].addListener('click', () => {
+              map.setCenter(pos);
+              map.setZoom(16);
+            });
+          } else {
+            busMarkers[id].setPosition(pos);
+          }
+
+          // Add to sidebar
+          const div = document.createElement("div");
+          div.className = "bus-item";
+          div.id = `bus-${id}`;
+          
+          const isActive = bus.status === 'active';
+          
+          div.innerHTML = `
+            <strong>🚌 ${id}</strong>
+            <div style="margin-top: 0.5rem;">
+              📍 Route: ${bus.route || 'Not assigned'}
+            </div>
+            <div style="margin-top: 0.3rem;">
+              👤 Driver: ${bus.driver || 'Not assigned'}
+            </div>
+            <div style="margin-top: 0.3rem; color: ${isActive ? '#90EE90' : '#ffd700'};">
+              ${isActive ? '🟢 Active - Click for details' : '🟡 Inactive'}
+            </div>
+            <div id="expanded-${id}" style="display: none;"></div>
+          `;
+
+          // Only allow clicking for active buses
+          if (isActive) {
+            div.style.cursor = 'pointer';
+            div.addEventListener("click", () => {
+              toggleBusDetails(id, bus, pos);
+            });
+          } else {
+            div.style.cursor = 'not-allowed';
+            div.style.opacity = '0.7';
+          }
+
+          busList.appendChild(div);
+        }
+      });
+    }
+
+    // Toggle bus details (expand/collapse)
+    function toggleBusDetails(busId, busData, busPosition) {
+      const expandedDiv = document.getElementById(`expanded-${busId}`);
+      
+      // If clicking the same bus, collapse it
+      if (expandedBusId === busId) {
+        expandedDiv.style.display = 'none';
+        expandedBusId = null;
+        directionsRenderer.setDirections({routes: []});
+        return;
+      }
+
+      // Collapse previous expanded bus
+      if (expandedBusId) {
+        document.getElementById(`expanded-${expandedBusId}`).style.display = 'none';
+      }
+
+      if (!userPosition) {
+        expandedDiv.innerHTML = `
+          <div class="bus-expanded">
+            <p style="color: #ef4444; font-size: 0.85rem;">Unable to get your location</p>
+          </div>
+        `;
+        expandedDiv.style.display = 'block';
+        return;
+      }
+
+      expandedBusId = busId;
+      
+      // Show loading immediately
+      expandedDiv.style.display = 'block';
+      expandedDiv.innerHTML = `
+        <div class="bus-expanded">
+          <p style="color: #ffd700; font-size: 0.85rem;">⏳ Calculating...</p>
+        </div>
+      `;
+
+      // Calculate route using Google Directions API with optimized settings
+      const request = {
+        origin: userPosition,
+        destination: busPosition,
+        travelMode: google.maps.TravelMode.DRIVING,
+        optimizeWaypoints: true,
+        provideRouteAlternatives: false
+      };
+
+      directionsService.route(request, (result, status) => {
+        // Check if this bus is still expanded
+        if (expandedBusId !== busId) return;
+
+        console.log('Directions API Status:', status);
+
+        if (status === 'OK' || status === google.maps.DirectionsStatus.OK) {
+          try {
+            const route = result.routes[0].legs[0];
+            const distance = route.distance.text;
+            const duration = route.duration.text;
+            const durationMinutes = route.duration.value / 60; // Get duration in minutes
+
+            // Determine color based on arrival time
+            let etaColor = '#10b981'; // Green (default)
+            let etaBgColor = 'rgba(16, 185, 129, 0.2)';
+            
+            if (durationMinutes <= 10) {
+              // Less than 10 minutes - Green (Very Near)
+              etaColor = '#10b981';
+              etaBgColor = 'rgba(16, 185, 129, 0.2)';
+            } else if (durationMinutes <= 30) {
+              // 10-30 minutes - Blue (Near)
+              etaColor = '#3b82f6';
+              etaBgColor = 'rgba(59, 130, 246, 0.2)';
+            } else if (durationMinutes <= 60) {
+              // 30-60 minutes - Yellow (Moderate)
+              etaColor = '#eab308';
+              etaBgColor = 'rgba(234, 179, 8, 0.2)';
+            } else {
+              // More than 60 minutes - Red (Far)
+              etaColor = '#ef4444';
+              etaBgColor = 'rgba(239, 68, 68, 0.2)';
+            }
+
+            // Display route on map immediately
+            directionsRenderer.setDirections(result);
+            
+            // Center on bus location instead of fitBounds
+            map.setCenter(busPosition);
+            map.setZoom(14);
+
+            // Show details instantly with color-coded ETA
+            expandedDiv.innerHTML = `
+              <div class="bus-expanded">
+                <div class="detail-line">
+                  📏 <strong>Distance:</strong> ${distance}
+                </div>
+                <div style="background: ${etaBgColor}; padding: 0.5rem; border-radius: 8px; margin-top: 0.5rem; font-weight: bold; color: ${etaColor};">
+                  ⏱️ <strong>Arrives in:</strong> ${duration}
+                </div>
+                <div class="detail-line" style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-top: 0.5rem;">
+                  Click again to close
+                </div>
+              </div>
+            `;
+            
+            console.log(`✅ Route calculated for ${busId}: ${distance}, ${duration}`);
+          } catch (error) {
+            console.error('Error processing route:', error);
+            expandedDiv.innerHTML = `
+              <div class="bus-expanded">
+                <p style="color: #ef4444; font-size: 0.85rem;">⚠️ Error displaying route</p>
+              </div>
+            `;
+          }
+        } else {
+          console.error('Directions request failed:', status);
+          expandedDiv.innerHTML = `
+            <div class="bus-expanded">
+              <p style="color: #ef4444; font-size: 0.85rem;">⚠️ Cannot calculate route (${status})</p>
+            </div>
+          `;
+        }
+      });
+    }
+
+    // Load all bus stops from Firebase
+    function loadAllStops() {
+      const stopsRef = db.ref("stops");
+
+      stopsRef.on("value", (snapshot) => {
+        const stops = snapshot.val();
+        
+        if (!stops) {
+          document.getElementById("stop-list").innerHTML = 
+            '<p class="no-data">No stops available</p>';
+          return;
+        }
+
+        // Clear old markers
+        Object.keys(stopMarkers).forEach(id => {
+          if (!stops[id]) {
+            stopMarkers[id].setMap(null);
+            delete stopMarkers[id];
+          }
+        });
+
+        // Add/update stop markers
+        for (let id in stops) {
+          const stop = stops[id];
+          
+          if (!stop.latitude || !stop.longitude) continue;
+          
+          const pos = { lat: stop.latitude, lng: stop.longitude };
+
+          if (!stopMarkers[id]) {
+            stopMarkers[id] = new google.maps.Marker({
+              position: pos,
+              map,
+              title: stop.name,
+              icon: {
+                url: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+                scaledSize: new google.maps.Size(35, 35),
+              }
+            });
+
+            stopMarkers[id].addListener('click', () => {
+              map.setCenter(pos);
+              map.setZoom(17);
+            });
+          } else {
+            stopMarkers[id].setPosition(pos);
+          }
+        }
+
+        updateNearestStop();
+      });
+    }
+
+    // Update nearest stop in sidebar
+    function updateNearestStop() {
+      if (!userPosition) return;
+
+      db.ref("stops").once("value", (snapshot) => {
+        const stops = snapshot.val();
+        
+        if (!stops) return;
+
+        const stopList = document.getElementById("stop-list");
+        stopList.innerHTML = "";
+
+        const stopsArray = [];
+
+        for (let id in stops) {
+          const stop = stops[id];
+          if (!stop.latitude || !stop.longitude) continue;
+
+          const distance = getDistanceKm(
+            userPosition.lat,
+            userPosition.lng,
+            stop.latitude,
+            stop.longitude
+          );
+
+          stopsArray.push({ id, name: stop.name, distance, position: { lat: stop.latitude, lng: stop.longitude } });
+        }
+
+        stopsArray.sort((a, b) => a.distance - b.distance);
+
+        if (stopsArray.length === 0) {
+          stopList.innerHTML = '<p class="no-data">No stops available</p>';
+          return;
+        }
+
+        stopsArray.forEach((stop, index) => {
+          const div = document.createElement("div");
+          div.className = "stop-item";
+          div.innerHTML = `
+            <strong>🚏 ${stop.name}</strong>
+            <div style="margin-top: 0.5rem;">
+              📍 Distance: ${stop.distance.toFixed(2)} km
+            </div>
+            ${index === 0 ? '<span class="nearest-badge">Nearest Stop</span>' : ''}
+          `;
+
+          div.addEventListener("click", () => {
+            map.setCenter(stop.position);
+            map.setZoom(17);
+          });
+
+          stopList.appendChild(div);
+        });
+      });
+    }
+
+    // Distance calculator (Haversine formula)
+    function getDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = deg2rad(lat2 - lat1);
+      const dLon = deg2rad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function deg2rad(deg) {
+      return deg * (Math.PI / 180);
+    }
+  </script>
+
+  <!-- Google Maps -->
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCtwLEWs_B85vK-5SliGJu8P3s4Mljq84Q&callback=initMap">
+  </script>
+</body>
+</html>

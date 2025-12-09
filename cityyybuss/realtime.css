@@ -1,0 +1,75 @@
+/* Reset & Fonts */
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+body { background: linear-gradient(120deg, #f5f7fa, #dfe9f3); color: #333; }
+
+/* Variables */
+:root {
+    --primary: #2c3e50;
+    --secondary: #3498db;
+    --accent: #e74c3c;
+    --success: #2ecc71;
+}
+
+/* Header */
+header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 1rem 2rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.15);}
+.header-content { display:flex; justify-content:space-between; align-items:center; max-width:1200px; margin:0 auto;}
+.logo i { font-size:2rem; }
+.logo h1 { font-size:1.5rem; }
+nav ul { display:flex; list-style:none; gap:20px; }
+nav a { color:white; text-decoration:none; font-weight:500; padding:5px 10px; border-radius:5px; transition:0.3s;}
+nav a:hover, nav a.active { background: rgba(255,255,255,0.2); }
+
+/* Container */
+.container { max-width: 1200px; margin:2rem auto; display:grid; grid-template-columns:1fr 350px; gap:20px; padding:0 1rem; }
+.map-container { position:relative; height:600px; border-radius:15px; overflow:hidden; box-shadow:0 6px 20px rgba(0,0,0,0.1); background: linear-gradient(135deg, #d4e6f1, #ffffff); }
+
+/* Map Overlay */
+.map-overlay { position:absolute; top:15px; left:15px; right:15px; display:flex; justify-content:space-between; z-index:10; }
+.search-box { background:white; padding:10px 15px; border-radius:50px; display:flex; align-items:center; width:300px; box-shadow:0 2px 12px rgba(0,0,0,0.15); }
+.search-box input { border:none; outline:none; width:100%; font-size:1rem; padding-left:5px; }
+.controls { display:flex; gap:10px; }
+.btn { background:white; border:none; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.3s; box-shadow:0 2px 10px rgba(0,0,0,0.15); }
+.btn:hover { background:var(--secondary); color:white; transform: scale(1.1); }
+
+/* Sidebar & Cards */
+.sidebar { display:flex; flex-direction:column; gap:20px; }
+.card { background:white; border-radius:15px; padding:1.5rem; box-shadow:0 6px 20px rgba(0,0,0,0.1); transition:0.3s; }
+.card:hover { transform: translateY(-3px); }
+.card h2 { margin-bottom:1rem; font-size:1.3rem; display:flex; align-items:center; gap:10px; color:var(--primary);}
+.card h2 i { color:var(--secondary); }
+
+/* Bus List */
+.bus-list, .stop-list { display:flex; flex-direction:column; gap:15px; }
+.bus-item, .stop-item { display:flex; justify-content:space-between; align-items:center; padding:12px; border-radius:10px; background:#f8f9fa; cursor:pointer; transition:0.3s; }
+.bus-item:hover, .stop-item:hover { transform: translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+.bus-info, .stop-info { display:flex; align-items:center; gap:10px; }
+.bus-icon, .stop-marker { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; }
+.bus-icon { background:var(--secondary); }
+.stop-marker { background:var(--success); }
+.home-marker { background:var(--accent); }
+.bus-details h3, .stop-details h3 { font-size:1rem; margin-bottom:3px; }
+.bus-details p, .stop-details p { font-size:0.85rem; color:#666; }
+.bus-time .time { font-weight:bold; color:var(--accent); font-size:1.2rem; }
+.bus-time .distance, .stop-distance { font-size:0.8rem; color:#666; padding:3px 8px; border-radius:12px; background:#ecf0f1; }
+.stop-item.nearby-stop { border-left:4px solid var(--accent); }
+
+/* Legend */
+.legend { display:flex; gap:15px; margin-top:10px; flex-wrap:wrap; font-size:0.85rem; }
+.legend-color { width:15px; height:15px; border-radius:50%; }
+.home-color { background:var(--accent); }
+.bus-color { background:var(--secondary); }
+.stop-color { background:var(--success); }
+
+/* Footer */
+footer { background:var(--primary); color:white; text-align:center; padding:1.5rem; margin-top:2rem; }
+
+/* Responsive */
+@media (max-width:900px) {
+    .container { grid-template-columns:1fr; }
+    .map-container { height:400px; }
+}
+#map {
+  width: 100%;
+  height: 100%;
+}
+

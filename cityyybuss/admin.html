@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityBus Admin - Sambhajinagar</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      font-family:'Segoe UI',sans-serif;
+      background:linear-gradient(135deg,#667eea,#764ba2);
+      min-height:100vh;color:#1f2937;transition:background .5s,color .5s
+    }
+    body.dark{background:#111827;color:#e5e7eb}
+    .admin-header{
+      background:#fff;padding:1rem 2rem;display:flex;justify-content:space-between;
+      align-items:center;box-shadow:0 2px 10px rgba(0,0,0,0.1)
+    }
+    body.dark .admin-header{background:#1f2937}
+    .logo{display:flex;align-items:center;gap:.5rem}
+    .logo i{color:#4f46e5;font-size:1.5rem}
+    .main-container{display:flex;height:calc(100vh - 80px)}
+    .sidebar{
+      width:250px;background:#fff;padding:1rem;box-shadow:2px 0 10px rgba(0,0,0,0.1);
+      transition:background .5s;overflow-y:auto;
+    }
+    body.dark .sidebar{background:#1f2937}
+    .nav-item{padding:.75rem;border-radius:8px;margin-bottom:.5rem;cursor:pointer;color:#333;font-weight:500;transition:all .3s;}
+    .nav-item.active,.nav-item:hover{background:#4f46e5;color:#fff}
+    body.dark .nav-item{color:#e5e7eb}
+    .content-area{flex:1;padding:1.5rem;overflow-y:auto}
+    .section{display:none}
+    .section.active{display:block}
+    #adminMap{height:400px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);margin-top:1rem;}
+    .bus-item,.route-item,.alert-item,.stop-item{
+      background:#fff;margin:.5rem 0;padding:1rem;border-left:4px solid #4f46e5;border-radius:6px;box-shadow:0 2px 5px rgba(0,0,0,0.05);
+    }
+    body.dark .bus-item,body.dark .route-item,body.dark .alert-item,body.dark .stop-item{background:#1f2937}
+    .btn{padding:.5rem 1rem;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all .3s;margin:0.2rem;}
+    .btn-primary{background:#4f46e5;color:#fff}
+    .btn-primary:hover{background:#4338ca;}
+    .btn-danger{background:#dc2626;color:#fff}
+    .btn-danger:hover{background:#b91c1c;}
+    .btn-toggle{background:#374151;color:#fff;border:none;padding:.5rem 1rem;border-radius:6px;cursor:pointer;transition:background .3s}
+    .btn-toggle:hover{background:#4b5563}
+    input,select,textarea{width:100%;padding:.5rem;border:1px solid #ccc;border-radius:6px;background:transparent;color:inherit;margin-bottom:0.8rem;}
+    body.dark input,body.dark select,body.dark textarea{border-color:#4b5563;}
+    .stats{display:flex;gap:1rem;margin:1rem 0;flex-wrap:wrap;}
+    .stat-card{flex:1;background:#fff;border-radius:10px;padding:1.5rem;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.1);min-width:150px;}
+    body.dark .stat-card{background:#1f2937}
+    .stat-card h3{font-size:1rem;margin-bottom:.5rem;color:#6b7280;}
+    .stat-card p{font-size:1.8rem;color:#4f46e5;font-weight:bold}
+    .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;z-index:1000;}
+    .modal-content{background:#fff;padding:2rem;border-radius:12px;width:90%;max-width:450px;box-shadow:0 10px 40px rgba(0,0,0,0.3);max-height:80vh;overflow-y:auto;}
+    body.dark .modal-content{background:#1f2937;}
+    .modal-content h3{margin-bottom:1rem;color:#4f46e5;}
+    .modal-content label{display:block;margin-bottom:0.3rem;font-weight:500;color:#374151;}
+    body.dark .modal-content label{color:#e5e7eb;}
+    .live-indicator{display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:5px;animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+    .coord-helper{font-size:0.85rem;color:#6b7280;margin-top:0.3rem;}
+  </style>
+</head>
+<body>
+  <div class="admin-header">
+    <div class="logo"><i class="fas fa-bus"></i><h1>CityBus Admin</h1></div>
+    <div>
+      <button class="btn-toggle" onclick="toggleDarkMode()"><i class="fas fa-moon"></i></button>
+      <button class="btn btn-danger" onclick="window.location.href='index.html'"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </div>
+
+  <div class="main-container">
+    <div class="sidebar">
+      <div class="nav-item active" onclick="showSection('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</div>
+      <div class="nav-item" onclick="showSection('buses')"><i class="fas fa-bus"></i> Manage Buses</div>
+      <div class="nav-item" onclick="showSection('stops')"><i class="fas fa-map-marker-alt"></i> Bus Stops</div>
+      <div class="nav-item" onclick="showSection('routes')"><i class="fas fa-route"></i> Routes</div>
+      <div class="nav-item" onclick="showSection('alerts')"><i class="fas fa-bell"></i> Alerts</div>
+    </div>
+
+    <div class="content-area">
+      <!-- Dashboard -->
+      <div id="dashboard" class="section active">
+        <h2><i class="fas fa-chart-line"></i> Dashboard Overview</h2>
+        <div class="stats">
+          <div class="stat-card"><h3>Total Buses</h3><p id="totalBuses">0</p></div>
+          <div class="stat-card"><h3>Active Now</h3><p id="activeBuses">0</p></div>
+          <div class="stat-card"><h3>Total Stops</h3><p id="totalStops">0</p></div>
+        </div>
+        <div id="adminMap"></div>
+      </div>
+
+      <!-- Buses -->
+      <div id="buses" class="section">
+        <h2><i class="fas fa-bus"></i> Manage Buses</h2>
+        <button class="btn btn-primary" onclick="openBusModal()"><i class="fas fa-plus"></i> Add Bus</button>
+        <div id="busList" style="margin-top:1rem;"></div>
+      </div>
+
+      <!-- Bus Stops -->
+      <div id="stops" class="section">
+        <h2><i class="fas fa-map-marker-alt"></i> Bus Stops</h2>
+        <button class="btn btn-primary" onclick="openStopModal()"><i class="fas fa-plus"></i> Add Stop</button>
+        <div id="stopList" style="margin-top:1rem;"></div>
+      </div>
+
+      <!-- Routes -->
+      <div id="routes" class="section">
+        <h2><i class="fas fa-route"></i> Routes</h2>
+        <button class="btn btn-primary" onclick="openRouteModal()"><i class="fas fa-plus"></i> Add Route</button>
+        <div id="routeList" style="margin-top:1rem;"></div>
+      </div>
+
+      <!-- Alerts -->
+      <div id="alerts" class="section">
+        <h2><i class="fas fa-bell"></i> Manage Alerts</h2>
+        <label>Alert Title</label>
+        <input id="alertTitle" placeholder="e.g. Route 12 Delayed">
+        <label>Message</label>
+        <textarea id="alertMessage" rows="3" placeholder="e.g. Due to traffic congestion"></textarea>
+        <button class="btn btn-primary" onclick="saveAlert()"><i class="fas fa-save"></i> Add Alert</button>
+        <div id="alertList" style="margin-top:1rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bus Modal -->
+  <div id="busModal" class="modal">
+    <div class="modal-content">
+      <h3><i class="fas fa-bus"></i> Add New Bus</h3>
+      <label>Bus ID</label><input id="busId" placeholder="e.g. BUS-101">
+      <label>Route</label><input id="busRoute" placeholder="e.g. Station to Mall">
+      <label>Driver Name</label><input id="driverName" placeholder="e.g. John Doe">
+      <label>Status</label>
+      <select id="busStatus">
+        <option value="inactive">Inactive</option>
+        <option value="active">Active</option>
+      </select>
+      <button class="btn btn-primary" onclick="saveBus()"><i class="fas fa-save"></i> Save</button>
+      <button class="btn btn-danger" onclick="closeBusModal()"><i class="fas fa-times"></i> Cancel</button>
+    </div>
+  </div>
+
+  <!-- Stop Modal -->
+  <div id="stopModal" class="modal">
+    <div class="modal-content">
+      <h3><i class="fas fa-map-marker-alt"></i> Add Bus Stop</h3>
+      <label>Stop Name</label>
+      <input id="stopName" placeholder="e.g. Railway Station">
+      <label>Latitude</label>
+      <input id="stopLat" type="number" step="any" placeholder="e.g. 19.8762">
+      <p class="coord-helper">💡 Click on map or use GPS to get coordinates</p>
+      <label>Longitude</label>
+      <input id="stopLng" type="number" step="any" placeholder="e.g. 75.3433">
+      <p class="coord-helper">💡 You can use Google Maps to find exact location</p>
+      <button class="btn btn-primary" onclick="saveStop()"><i class="fas fa-save"></i> Save</button>
+      <button class="btn btn-danger" onclick="closeStopModal()"><i class="fas fa-times"></i> Cancel</button>
+    </div>
+  </div>
+
+  <!-- Route Modal -->
+  <div id="routeModal" class="modal">
+    <div class="modal-content">
+      <h3><i class="fas fa-route"></i> Add New Route</h3>
+      <label>Route Name</label><input id="routeName" placeholder="e.g. Route 12">
+      <label>Start Point</label><input id="routeStart" placeholder="e.g. Railway Station">
+      <label>End Point</label><input id="routeEnd" placeholder="e.g. City Mall">
+      <button class="btn btn-primary" onclick="saveRoute()"><i class="fas fa-save"></i> Save</button>
+      <button class="btn btn-danger" onclick="closeRouteModal()"><i class="fas fa-times"></i> Cancel</button>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+  
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAZUaLXmss_Heh6nKdeb385Mop-oiYhIHM",
+      authDomain: "bus-tracking-12915.firebaseapp.com",
+      databaseURL: "https://bus-tracking-12915-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "bus-tracking-12915",
+      storageBucket: "bus-tracking-12915.firebasestorage.app",
+      messagingSenderId: "269054792297",
+      appId: "1:269054792297:web:19ef7bedc3de2d1a5888f8"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let adminMap = L.map('adminMap').setView([19.8762, 75.3433], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(adminMap);
+    let busMarkersOnMap = {};
+    let stopMarkersOnMap = {};
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    }
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      if (id === 'buses') renderBuses();
+      if (id === 'stops') renderStops();
+      if (id === 'routes') renderRoutes();
+      if (id === 'dashboard') updateDashboard();
+      if (id === 'alerts') renderAlerts();
+    }
+
+    function updateDashboard() {
+      db.ref('buses').once('value', (snapshot) => {
+        const buses = snapshot.val() || {};
+        const busArray = Object.values(buses);
+        
+        document.getElementById('totalBuses').textContent = busArray.length;
+        document.getElementById('activeBuses').textContent = busArray.filter(b => b.status === 'active').length;
+
+        Object.values(busMarkersOnMap).forEach(m => adminMap.removeLayer(m));
+        busMarkersOnMap = {};
+
+        busArray.forEach(bus => {
+          if (bus.latitude && bus.longitude) {
+            const marker = L.marker([bus.latitude, bus.longitude]).addTo(adminMap);
+            marker.bindPopup(`<b>${bus.busNumber || 'Bus'}</b><br>${bus.route || 'No route'}<br>Status: ${bus.status || 'unknown'}`);
+            busMarkersOnMap[bus.busNumber] = marker;
+          }
+        });
+      });
+
+      db.ref('stops').once('value', (snapshot) => {
+        const stops = snapshot.val() || {};
+        document.getElementById('totalStops').textContent = Object.keys(stops).length;
+
+        Object.values(stopMarkersOnMap).forEach(m => adminMap.removeLayer(m));
+        stopMarkersOnMap = {};
+
+        Object.keys(stops).forEach(stopId => {
+          const stop = stops[stopId];
+          if (stop.latitude && stop.longitude) {
+            const marker = L.marker([stop.latitude, stop.longitude], {
+              icon: L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+                iconSize: [30, 30]
+              })
+            }).addTo(adminMap);
+            marker.bindPopup(`<b>🚏 ${stop.name}</b>`);
+            stopMarkersOnMap[stopId] = marker;
+          }
+        });
+      });
+    }
+
+    function renderBuses() {
+      db.ref('buses').on('value', (snapshot) => {
+        const buses = snapshot.val() || {};
+        const list = document.getElementById('busList');
+        list.innerHTML = '';
+        
+        if (Object.keys(buses).length === 0) {
+          list.innerHTML = '<p style="text-align:center;color:#6b7280;">No buses added yet</p>';
+          return;
+        }
+
+        Object.keys(buses).forEach(busId => {
+          const bus = buses[busId];
+          const div = document.createElement('div');
+          div.className = 'bus-item';
+          const isActive = bus.status === 'active';
+          div.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                ${isActive ? '<span class="live-indicator"></span>' : ''}
+                <strong>${bus.busNumber || busId}</strong><br>
+                <small>Route: ${bus.route || 'Not assigned'}</small><br>
+                <small>Driver: ${bus.driver || 'Not assigned'}</small><br>
+                <small>Status: <span style="color:${isActive ? '#22c55e' : '#ef4444'}">${bus.status || 'inactive'}</span></small>
+              </div>
+              <div>
+                <button class='btn btn-danger' onclick="deleteBus('${busId}')"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+          `;
+          list.appendChild(div);
+        });
+      });
+    }
+
+    function openBusModal() {
+      document.getElementById('busModal').style.display = 'flex';
+    }
+    
+    function closeBusModal() {
+      document.getElementById('busModal').style.display = 'none';
+      document.getElementById('busId').value = '';
+      document.getElementById('busRoute').value = '';
+      document.getElementById('driverName').value = '';
+    }
+    
+    function saveBus() {
+      const busId = document.getElementById('busId').value.trim();
+      const route = document.getElementById('busRoute').value.trim();
+      const driver = document.getElementById('driverName').value.trim();
+      const status = document.getElementById('busStatus').value;
+      
+      if (!busId || !route) {
+        alert('Please fill Bus ID and Route');
+        return;
+      }
+
+      db.ref(`buses/${busId}`).set({
+        busNumber: busId,
+        route: route,
+        driver: driver,
+        status: status,
+        latitude: 19.8762 + (Math.random() - 0.5) * 0.02,
+        longitude: 75.3433 + (Math.random() - 0.5) * 0.02,
+        timestamp: new Date().toISOString(),
+        lastUpdate: Date.now()
+      }).then(() => {
+        alert('✅ Bus added successfully!');
+        closeBusModal();
+        renderBuses();
+        updateDashboard();
+      }).catch(error => {
+        alert('Error: ' + error.message);
+      });
+    }
+    
+    function deleteBus(busId) {
+      if (!confirm(`Delete bus ${busId}?`)) return;
+      
+      db.ref(`buses/${busId}`).remove().then(() => {
+        alert('✅ Bus deleted');
+        renderBuses();
+        updateDashboard();
+      }).catch(error => {
+        alert('Error: ' + error.message);
+      });
+    }
+
+    // STOPS MANAGEMENT
+    function renderStops() {
+      db.ref('stops').on('value', (snapshot) => {
+        const stops = snapshot.val() || {};
+        const list = document.getElementById('stopList');
+        list.innerHTML = '';
+        
+        if (Object.keys(stops).length === 0) {
+          list.innerHTML = '<p style="text-align:center;color:#6b7280;">No stops added yet</p>';
+          return;
+        }
+
+        Object.keys(stops).forEach(stopId => {
+          const stop = stops[stopId];
+          const div = document.createElement('div');
+          div.className = 'stop-item';
+          div.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong>🚏 ${stop.name}</strong><br>
+                <small>📍 Lat: ${stop.latitude}, Lng: ${stop.longitude}</small>
+              </div>
+              <div>
+                <button class='btn btn-danger' onclick="deleteStop('${stopId}')"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+          `;
+          list.appendChild(div);
+        });
+      });
+    }
+
+    function openStopModal() {
+      document.getElementById('stopModal').style.display = 'flex';
+    }
+    
+    function closeStopModal() {
+      document.getElementById('stopModal').style.display = 'none';
+      document.getElementById('stopName').value = '';
+      document.getElementById('stopLat').value = '';
+      document.getElementById('stopLng').value = '';
+    }
+    
+    function saveStop() {
+      const name = document.getElementById('stopName').value.trim();
+      const lat = parseFloat(document.getElementById('stopLat').value);
+      const lng = parseFloat(document.getElementById('stopLng').value);
+      
+      if (!name || !lat || !lng) {
+        alert('Please fill all fields with valid data');
+        return;
+      }
+
+      const stopId = name.replace(/\s+/g, '-').toLowerCase() + '-' + Date.now();
+      
+      db.ref(`stops/${stopId}`).set({
+        name: name,
+        latitude: lat,
+        longitude: lng,
+        timestamp: new Date().toISOString()
+      }).then(() => {
+        alert('✅ Stop added successfully!');
+        closeStopModal();
+        renderStops();
+        updateDashboard();
+      }).catch(error => {
+        alert('Error: ' + error.message);
+      });
+    }
+    
+    function deleteStop(stopId) {
+      if (!confirm('Delete this stop?')) return;
+      
+      db.ref(`stops/${stopId}`).remove().then(() => {
+        alert('✅ Stop deleted');
+        renderStops();
+        updateDashboard();
+      }).catch(error => {
+        alert('Error: ' + error.message);
+      });
+    }
+
+    function renderRoutes() {
+      db.ref('routes').on('value', (snapshot) => {
+        const routes = snapshot.val() || {};
+        const list = document.getElementById('routeList');
+        list.innerHTML = '';
+        
+        if (Object.keys(routes).length === 0) {
+          list.innerHTML = '<p style="text-align:center;color:#6b7280;">No routes added yet</p>';
+          return;
+        }
+
+        Object.keys(routes).forEach(routeId => {
+          const route = routes[routeId];
+          const div = document.createElement('div');
+          div.className = 'route-item';
+          div.innerHTML = `
+            <strong>${route.name}</strong><br>
+            <small>${route.start} → ${route.end}</small>
+            <button class='btn btn-danger' style="float:right;" onclick="deleteRoute('${routeId}')"><i class="fas fa-trash"></i></button>
+          `;
+          list.appendChild(div);
+        });
+      });
+    }
+    
+    function openRouteModal() {
+      document.getElementById('routeModal').style.display = 'flex';
+    }
+    
+    function closeRouteModal() {
+      document.getElementById('routeModal').style.display = 'none';
+      document.getElementById('routeName').value = '';
+      document.getElementById('routeStart').value = '';
+      document.getElementById('routeEnd').value = '';
+    }
+    
+    function saveRoute() {
+      const name = document.getElementById('routeName').value.trim();
+      const start = document.getElementById('routeStart').value.trim();
+      const end = document.getElementById('routeEnd').value.trim();
+      
+      if (!name || !start || !end) {
+        alert('Fill all fields');
+        return;
+      }
+
+      const routeId = name.replace(/\s+/g, '-').toLowerCase();
+      
+      db.ref(`routes/${routeId}`).set({
+        name: name,
+        start: start,
+        end: end,
+        timestamp: new Date().toISOString()
+      }).then(() => {
+        alert('✅ Route added!');
+        closeRouteModal();
+        renderRoutes();
+      }).catch(error => {
+        alert('Error: ' + error.message);
+      });
+    }
+    
+    function deleteRoute(routeId) {
+      if (!confirm('Delete this route?')) return;
+      
+      db.ref(`routes/${routeId}`).remove().then(() => {
+        alert('✅ Route deleted');
+        renderRoutes();
+      });
+    }
+
+    function saveAlert() {
+      const title = document.getElementById('alertTitle').value.trim();
+      const message = document.getElementById('alertMessage').value.trim();
+      
+      if (!title || !message) {
+        alert("Fill all fields!");
+        return;
+      }
+
+      const alertId = Date.now();
+      
+      db.ref(`alerts/${alertId}`).set({
+        title: title,
+        message: message,
+        time: new Date().toLocaleString(),
+        timestamp: Date.now()
+      }).then(() => {
+        alert("✅ Alert added!");
+        document.getElementById('alertTitle').value = '';
+        document.getElementById('alertMessage').value = '';
+        renderAlerts();
+      }).catch(error => {
+        alert('Error: ' + error.message);
+      });
+    }
+    
+    function renderAlerts() {
+      db.ref('alerts').on('value', (snapshot) => {
+        const alerts = snapshot.val() || {};
+        const list = document.getElementById('alertList');
+        list.innerHTML = '';
+        
+        if (Object.keys(alerts).length === 0) {
+          list.innerHTML = '<p style="text-align:center;color:#6b7280;">No alerts yet</p>';
+          return;
+        }
+
+        Object.keys(alerts).reverse().forEach(alertId => {
+          const alert = alerts[alertId];
+          const div = document.createElement('div');
+          div.className = 'alert-item';
+          div.innerHTML = `
+            <strong>${alert.title}</strong><br>
+            <small>${alert.message}</small><br>
+            <small style="color:#6b7280;">${alert.time}</small>
+            <button class='btn btn-danger' style="float:right;" onclick="deleteAlert('${alertId}')"><i class="fas fa-trash"></i></button>
+          `;
+          list.appendChild(div);
+        });
+      });
+    }
+    
+    function deleteAlert(alertId) {
+      if (!confirm("Delete this alert?")) return;
+      
+      db.ref(`alerts/${alertId}`).remove().then(() => {
+        alert('✅ Alert deleted');
+        renderAlerts();
+      });
+    }
+
+    updateDashboard();
+    renderBuses();
+  </script>
+</body>
+</html>
